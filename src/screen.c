@@ -1,4 +1,3 @@
-//#include "SDL.h"
 #include "screen.h"
 #include "board.h"
 #include "sound.h"
@@ -90,9 +89,8 @@ int SDL_getchar(void)
 			default:
 			break;
 		}
-		//printf("Press %d\n",event.key.keysym.unicode);
-		if ((event.key.keysym.unicode & 0xFF80)==0 ) {
-			int k=event.key.keysym.unicode;
+		int k=event.key.keysym.sym;
+		if ((k>=SDLK_a) && (k<=SDLK_z)) {
 			printf("Press %d\n",k);
 			if ( k>=65+32) {
 				k-=32;
@@ -112,14 +110,13 @@ void SDL_textinput(SDL_Surface *font,SDL_Surface * dest,int x,int y,char *string
 	int pos=0;
 	SDL_Surface *save;
 	SDL_Rect save_rect={x,y,size*font->w/77,font->h};
-	SDL_Rect curs_rect={0,y+font->h,font->w/77,2};
+	//SDL_Rect curs_rect={0,y+font->h,font->w/77,2};
 	
 	save=SDL_CreateRGBSurface(SDL_SWSURFACE,size*font->w/77,font->h,16, 0xF800, 0x7E0,0x1F, 0);
 	SDL_BlitSurface(dest,&save_rect,save,NULL);
 	memset(string,0,size+1);
 
 	sx=x;
-	SDL_EnableUNICODE(1);
 	while((a=SDL_getchar())!=-1) {
 		if (a==LEFT && pos>0) pos--;
 		if (a==RIGHT && pos<s) pos++;
@@ -148,17 +145,17 @@ void SDL_textinput(SDL_Surface *font,SDL_Surface * dest,int x,int y,char *string
   //       /* cursor */
   //       curs_rect.x=x+pos*font->w/77;
 		// SDL_FillRect(dest,&curs_rect,0xFFFF);
-#ifdef PANDORA
 		SDL_BlitSurface(buffer,NULL,screen,NULL);
-		SDL_Flip(screen);
-#else
-		SDL_SoftStretch(buffer,NULL,screen,NULL);
-		SDL_UpdateRect(screen,0,0,screen->w,screen->h);
+		void* pixels;
+		int pitch;
+		SDL_RenderClear(renderer);
+		SDL_LockTexture(texture,NULL,&pixels,&pitch);
+		memcpy(pixels,screen->pixels,screen->pitch*screen->h);
+		SDL_UnlockTexture(texture);
+		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderPresent(renderer);
 		//frame_skip();//SDL_Delay(13);
-#endif
-
 	}
-	SDL_EnableUNICODE(0);
 	SDL_FreeSurface(save);
 }
 
@@ -166,14 +163,16 @@ void input_username(char *string,int size) {
 	SDL_printf(font_big,buffer,130,130,"YOU GOT A HISCORE!!");
 	SDL_printf(font_big,buffer,130,150,"   ENTER YOUR NAME:");
 	SDL_printf(font_big,buffer,130,180,"-------------------");
-	#ifdef PANDORA
 	SDL_BlitSurface(buffer,NULL,screen,NULL);
-	SDL_Flip(screen);
-#else
-	SDL_SoftStretch(buffer,NULL,screen,NULL);
-	SDL_UpdateRect(screen,0,0,screen->w,screen->h);
-		//frame_skip();//SDL_Delay(13);
-#endif
+	void* pixels;
+	int pitch;
+	SDL_RenderClear(renderer);
+	SDL_LockTexture(texture,NULL,&pixels,&pitch);
+	memcpy(pixels,screen->pixels,screen->pitch*screen->h);
+	SDL_UnlockTexture(texture);
+	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_RenderPresent(renderer);
+	//frame_skip();//SDL_Delay(13);
 	SDL_textinput(font_big,buffer,130,170,string,size);
 }
 
@@ -205,23 +204,23 @@ void SDL_BlitZoomBorder(SDL_Surface *src,SDL_Rect *sr,int b,
 	trect.x=sx+b;trect.y=sy+b;
 	dr->x+=b;dr->y+=b;
 	dr->w=dr->w-b*2;dr->h=dr->h-b*2;
-	SDL_SoftStretch(src,&trect,dst,&dr);
+	SDL_BlitScaled(src,&trect,dst,dr);
 
 }
 
 void init_screen(void) {
-	int rc;
-	rc=SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
-	if(rc!=0) {
-		printf("Error while SDL_Init\n");
-		exit(1);
-	}
-#ifdef PANDORA
-	screen=SDL_SetVideoMode(400,240,16,SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
+	int flags = 0;
+#ifdef __SWITCH__
+	flags|=SDL_WINDOW_FULLSCREEN;
 #else
-	screen=SDL_SetVideoMode(400,240,16,SDL_SWSURFACE);
+	flags|=SDL_WINDOW_FULLSCREEN_DESKTOP;
 #endif
-	buffer=SDL_CreateRGBSurface(SDL_SWSURFACE,400,240,16,0xF800, 0x7E0, 0x1F, 0);
+	window=SDL_CreateWindow("hexgem",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,SCREEN_WIDTH,SCREEN_HEIGHT,flags);
+	renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
+	SDL_GetRendererOutputSize(renderer,&draw_w,&draw_h);
+	buffer=SDL_CreateRGBSurface(SDL_SWSURFACE,SCREEN_WIDTH,SCREEN_HEIGHT,16,0xF800, 0x7E0, 0x1F, 0);
+	screen=SDL_CreateRGBSurface(SDL_SWSURFACE,SCREEN_WIDTH,SCREEN_HEIGHT,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	texture=SDL_CreateTexture(renderer,SDL_PIXELFORMAT_ABGR8888,SDL_TEXTUREACCESS_STREAMING,SCREEN_WIDTH,SCREEN_HEIGHT);
 }
 
 SDL_Surface *load_bmp(char *filename,int colorkey) {
@@ -229,15 +228,27 @@ SDL_Surface *load_bmp(char *filename,int colorkey) {
 
 	temp=SDL_LoadBMP(filename);
 	if (colorkey) {
-		SDL_SetColorKey(temp,SDL_SRCCOLORKEY,SDL_MapRGB(temp->format, 255, 0, 255));
+		SDL_SetColorKey(temp,SDL_TRUE,SDL_MapRGB(temp->format, 255, 0, 255));
 	}
-	res=SDL_DisplayFormat(temp);
+	res=SDL_ConvertSurface(temp,buffer->format,0);
 	SDL_FreeSurface(temp);
 
 	return res;
 }
 
 void load_assets(void) {
+#ifdef __SWITCH__
+	gem_surface=load_bmp("romfs:/gems.bmp",1);
+	little_gem_surface=load_bmp("romfs:/little_gem.bmp",1);
+	board_surface=load_bmp("romfs:/board169.bmp",0);
+	board_top_surface=load_bmp("romfs:/board_top.bmp",1);
+	font_big=load_bmp("romfs:/font_big.bmp",1);
+	font_small=load_bmp("romfs:/font_small.bmp",1);
+	button=load_bmp("romfs:/button.bmp",1);
+	gamemode_button=load_bmp("romfs:/gamemode.bmp",1);
+	titlescreen=load_bmp("romfs:/titlescreen.bmp",0);
+	dragonbox=load_bmp("romfs:/dragonbox.bmp",0);
+#else
 	gem_surface=load_bmp("assets/gems.bmp",1);
 	little_gem_surface=load_bmp("assets/little_gem.bmp",1);
 	board_surface=load_bmp("assets/board169.bmp",0);
@@ -248,6 +259,7 @@ void load_assets(void) {
 	gamemode_button=load_bmp("assets/gamemode.bmp",1);
 	titlescreen=load_bmp("assets/titlescreen.bmp",0);
 	dragonbox=load_bmp("assets/dragonbox.bmp",0);
+#endif
 }
 
 void draw_board(void) {
@@ -270,6 +282,14 @@ void test_draw_gems(int col,int x,int y) {
 	}
 	SDL_BlitSurface(gem_surface,&src,buffer,&dst);
 	SDL_BlitSurface(buffer,NULL,screen,NULL);
+	void* pixels;
+	int pitch;
+	SDL_RenderClear(renderer);
+	SDL_LockTexture(texture,NULL,&pixels,&pitch);
+	memcpy(pixels,screen->pixels,screen->pitch*screen->h);
+	SDL_UnlockTexture(texture);
+	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_RenderPresent(renderer);
 	if (col==0) cnt++;
 }
 
@@ -378,7 +398,7 @@ int fspeed[MAXSPEED]={0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,2,3,5,8};
 //int fspeed[MAXSPEED]={0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1};
 void draw_gems(BOARD *b) {
 	int i,j;
-	GEMLIST *l,*p;
+	GEMLIST *l;
 	GEM *g;
 	int floor_y;
 	int need_reduce=0;
@@ -623,10 +643,10 @@ int g2s_y(int x,int y) {
 static int bandeau_x=640;
 static char *bandeau="MADE FOR THE DRAGONBOX COMPETITION 2013 ... CODE AND GFX BY PEPONE ... MUSIC BY FOXSYNERGY ... FONT BY SPICYPIXEL ...";
 
-int draw_intro(void) {
+void draw_intro(void) {
 	SDL_BlitSurface(dragonbox,NULL,buffer,NULL);
 }
-int draw_main_menu(void) {
+void draw_main_menu(void) {
 	SDL_BlitSurface(titlescreen,NULL,buffer,NULL);
 }
 // void draw_scoreboard(int d) {
@@ -645,12 +665,14 @@ void draw_button(SDL_Rect *r,char *text) {
 	SDL_printf(font_big,buffer,200-l/2,r->y+(r->h-16)/2,text);
 }
 void flip_screen(void) {
-#ifdef PANDORA
+	void* pixels;
+	int pitch;
 	SDL_BlitSurface(buffer,NULL,screen,NULL);
-	SDL_Flip(screen);
-#else
-	SDL_SoftStretch(buffer,NULL,screen,NULL);
-	SDL_UpdateRect(screen,0,0,screen->w,screen->h);
-		frame_skip();//SDL_Delay(13);
-#endif
-	}
+	SDL_RenderClear(renderer);
+	SDL_LockTexture(texture,NULL,&pixels,&pitch);
+	memcpy(pixels,screen->pixels,screen->pitch*screen->h);
+	SDL_UnlockTexture(texture);
+	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_RenderPresent(renderer);
+	frame_skip();//SDL_Delay(13);
+}

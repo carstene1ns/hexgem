@@ -33,7 +33,7 @@ uint32_t random_well512(void)
 
 uint32_t random_max(uint32_t max) {
 	uint32_t base_random = random_well512(); /* in [0, RAND_MAX] */
-	uint32_t remainder,bucket,range;
+	uint32_t remainder,bucket; //range
 	if (RNDMAX == base_random) return random_max( max);
 	/* now guaranteed to be in [0, RAND_MAX) */
 	//int range       = max - min,
