@@ -40,6 +40,17 @@ void load_sound(void) {
 	music2 = Mix_LoadMUS("romfs:/Rusted_Soul.mp3");
 	music3 = Mix_LoadMUS("romfs:/The_Time_You_Spend_v1_1.mp3");
 	mc_gameover = Mix_LoadWAV("romfs:/gameover.wav");
+#elif defined __vita__
+	mc_swap = Mix_LoadWAV("app0:assets/swap.wav");
+	mc_wrong = Mix_LoadWAV("app0:assets/badmove.wav");
+	mc_fall = Mix_LoadWAV("app0:assets/fall.wav");
+	mc_combo1 = Mix_LoadWAV("app0:assets/combo1.wav");
+	mc_combo2 = Mix_LoadWAV("app0:assets/combo2.wav");
+	mc_combo3 = Mix_LoadWAV("app0:assets/combo3.wav");
+	music1 = Mix_LoadMUS("app0:assets/Grey_Sector_v0_85.mp3");
+	music2 = Mix_LoadMUS("app0:assets/Rusted_Soul.mp3");
+	music3 = Mix_LoadMUS("app0:assets/The_Time_You_Spend_v1_1.mp3");
+	mc_gameover = Mix_LoadWAV("app0:assets/gameover.wav");
 #else
 	mc_swap = Mix_LoadWAV("assets/swap.wav");
 	mc_wrong = Mix_LoadWAV("assets/badmove.wav");

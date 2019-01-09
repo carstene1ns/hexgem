@@ -260,7 +260,7 @@ void load_assets(void) {
 	button=load_bmp("app0:assets/button.bmp",1);
 	gamemode_button=load_bmp("app0:assets/gamemode.bmp",1);
 	titlescreen=load_bmp("app0:assets/titlescreen.bmp",0);
-	dragonbox=load_bmp("app0:assets/hexgem/dragonbox.bmp",0);
+	dragonbox=load_bmp("app0:assets/dragonbox.bmp",0);
 #else
 	gem_surface=load_bmp("assets/gems.bmp",1);
 	little_gem_surface=load_bmp("assets/little_gem.bmp",1);
