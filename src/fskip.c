@@ -16,6 +16,7 @@
 #endif
 
 #define TICKS_PER_SEC 1000000UL
+#define usleep sceKernelDelayThread
 static uclock_t F;
 
 #define MAX_FRAMESKIP 10
@@ -99,7 +100,7 @@ int frame_skip(void) {
 			while (get_ticks() < target) {
 #ifndef WIN32
 				// if (conf.sleep_idle) {
-				 	sceKernelDelayThread(5000);
+				 	usleep(5);
 				// }
 #endif
 			}
