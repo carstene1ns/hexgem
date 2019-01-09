@@ -3,6 +3,11 @@
 #include "fskip.h"
 #include "hiscore.h"
 #include "sound.h"
+
+#ifdef __SWITCH__
+#include <switch.h>
+#endif
+
  /* Stolen from the mailing list */
        /* Creates a new mouse cursor from an XPM */
 
@@ -100,12 +105,14 @@ typedef enum RETCODE {
 
 SDL_Cursor *mouse_curs;
 
+SDL_Joystick *joy;
+
 RETCODE run_game_mainloop(GAMETYPE gametype,int wide) {
 	BOARD *board;
 	SDL_Event event;
-	int gameRunning = 1;
-	int i,ox=0,oy=0;
-	int omx,omy;
+	int ox=0,oy=0;
+	int omx=-1,omy=-1,mouse_x,mouse_y,finger_x,finger_y,num_fingers=0;
+	SDL_TouchID touchid;
 
 	if (wide) 
 		board=create_board(gametype,9+4,7,MAXGEMCOL-1);
@@ -146,28 +153,72 @@ RETCODE run_game_mainloop(GAMETYPE gametype,int wide) {
 // 					break;
 				}
 				break;
-			case SDL_MOUSEBUTTONDOWN: 
+			case SDL_MOUSEBUTTONDOWN:
+				mouse_x = SCREEN_WIDTH / (float)draw_w * event.button.x;
+				mouse_y = SCREEN_HEIGHT / (float)draw_h * event.button.y;
 				omx=omy=-1;
-				screenspace2gemspace(board,event.button.x,event.button.y,&board->cursx,&board->cursy);
+				screenspace2gemspace(board,mouse_x,mouse_y,&board->cursx,&board->cursy);
 				if (board->cursx !=-1 && board->cursy!=-1) {
-					omx=event.button.x;
-					omy=event.button.y;
+					omx=mouse_x;
+					omy=mouse_y;
 				}
-				//printf("Click %d,%d -> %d %d\n",event.button.x,event.button.y,board->cursx,board->cursy);
+				//printf("Click %d,%d -> %d %d\n",mouse_x,mouse_y,board->cursx,board->cursy);
 				break;
-			//case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEMOTION:
 				if (event.motion.state==SDL_PRESSED && omx!=-1 && omy!=-1) {
-
-					screenspace2gemspace(board,event.motion.x,event.motion.y,&ox,&oy);
+					mouse_x = SCREEN_WIDTH / (float)draw_w * event.button.x;
+					mouse_y = SCREEN_HEIGHT / (float)draw_h * event.button.y;
+					screenspace2gemspace(board,mouse_x,mouse_y,&ox,&oy);
 					if (ox!=board->cursx || oy!=board->cursy) {
-						//printf("Motion %d,%d -> %d %d\n",event.motion.x,event.motion.y,ox,oy);
+						//printf("Mouse Motion %d,%d -> %d %d\n",mouse_x,mouse_y,ox,oy);
 						if (ox!=-1 && oy!=-1 && board->block_input==0) {
 							omx=omy=-1;
 							play_sound(SID_SWAP);
 							begin_swap(board,ox,oy,board->cursx,board->cursy);
 						}
 					}
+				}
+				break;
+			case SDL_FINGERDOWN:
+				touchid = SDL_GetTouchDevice(0);
+				//if (touchid != 0)
+					num_fingers = SDL_GetNumTouchFingers(touchid);
+
+				if (num_fingers == 1) {
+					finger_x = draw_w * event.tfinger.x;
+					finger_y = draw_h * event.tfinger.y;
+					omx=omy=-1;
+					screenspace2gemspace(board,finger_x,finger_y,&board->cursx,&board->cursy);
+					if (board->cursx !=-1 && board->cursy!=-1) {
+						omx=finger_x;
+						omy=finger_y;
+					}
+					//printf("Finger Touch %d,%d -> %d %d\n",finger_x,finger_y,board->cursx,board->cursy);
+				}
+				break;
+			case SDL_FINGERMOTION:
+				touchid = SDL_GetTouchDevice(0);
+				//if (touchid != 0)
+					num_fingers = SDL_GetNumTouchFingers(touchid);
+
+				if (num_fingers == 1 && omx!=-1 && omy!=-1) {
+					finger_x = draw_w * event.tfinger.x;
+					finger_y = draw_h * event.tfinger.y;
+					screenspace2gemspace(board,finger_x,finger_y,&ox,&oy);
+					if (ox!=board->cursx || oy!=board->cursy) {
+						//printf("Finger Motion %d,%d -> %d %d\n",finger_x,finger_y,ox,oy);
+						if (ox!=-1 && oy!=-1 && board->block_input==0) {
+							omx=omy=-1;
+							play_sound(SID_SWAP);
+							begin_swap(board,ox,oy,board->cursx,board->cursy);
+						}
+					}
+				}
+				break;
+			case SDL_JOYBUTTONDOWN:
+				if (event.jbutton.button==11) {
+					free_board(board);
+					return RT_CANCEL;
 				}
 				break;
 			}
@@ -189,6 +240,9 @@ RETCODE run_game_mainloop(GAMETYPE gametype,int wide) {
 #ifdef PANDORA
 				char *string=getenv("USER");
 				stoupper(string);
+#elif __SWITCH__
+				// TODO
+				char *string="SWITCH PLAYER";
 #else
 				char string[32];
 				play_music(SID_MUSIC3);
@@ -200,14 +254,16 @@ RETCODE run_game_mainloop(GAMETYPE gametype,int wide) {
 			free_board(board);
 			return RT_GAMEOVER;
 		}
-#ifdef PANDORA
 		SDL_BlitSurface(buffer,NULL,screen,NULL);
-		SDL_Flip(screen);
-#else
-		SDL_SoftStretch(buffer,NULL,screen,NULL);
-		SDL_UpdateRect(screen,0,0,screen->w,screen->h);
+		void* pixels;
+		int pitch;
+		SDL_RenderClear(renderer);
+		SDL_LockTexture(texture,NULL,&pixels,&pitch);
+		memcpy(pixels,screen->pixels,screen->pitch*screen->h);
+		SDL_UnlockTexture(texture);
+		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderPresent(renderer);
 		frame_skip();//SDL_Delay(13);
-#endif
 	}
 
 }
@@ -220,6 +276,8 @@ void intro_loop(void) {
 			switch(event.type) {
 			case SDL_KEYDOWN:
 			case SDL_MOUSEBUTTONDOWN:
+			case SDL_FINGERDOWN:
+			case SDL_JOYBUTTONDOWN:
 				return;
 				break;
 			}
@@ -241,6 +299,8 @@ void show_highscore(void) {
 			switch(event.type) {
 			case SDL_KEYDOWN:
 			case SDL_MOUSEBUTTONDOWN:
+			case SDL_FINGERDOWN:
+			case SDL_JOYBUTTONDOWN:
 				return;
 				break;
 			}
@@ -268,8 +328,10 @@ int main_menu(void) {
 	SDL_Event event;
 	int gametype=GM_LINE;
 	int menulevel=2;
-	int x,mx,my,b=0;
+	int mx=0,my=0,b=0,num_fingers=0;
 	int cnt=0;
+	SDL_TouchID touchid;
+
 	while (menulevel!=0){
 		while (SDL_PollEvent(&event)) {
 			switch(event.type) {
@@ -277,11 +339,25 @@ int main_menu(void) {
 				return -1;
 				break;
 			case SDL_MOUSEBUTTONDOWN:
-				mx=event.button.x;
-				my=event.button.y;
+				mx = SCREEN_WIDTH / (float)draw_w * event.button.x;
+				my = SCREEN_HEIGHT / (float)draw_h * event.button.y;
 				b=1;
 				break;
 			case SDL_MOUSEBUTTONUP:
+				b=0;
+				break;
+			case SDL_FINGERDOWN:
+				touchid = SDL_GetTouchDevice(0);
+				//if (touchid != 0)
+					num_fingers = SDL_GetNumTouchFingers(touchid);
+
+				if (num_fingers == 1) {
+					mx = draw_w * event.tfinger.x;
+					my = draw_h * event.tfinger.y;
+					b=1;
+				}
+				break;
+			case SDL_FINGERUP:
 				b=0;
 				break;
 			case SDL_KEYDOWN:
@@ -290,6 +366,11 @@ int main_menu(void) {
 				case SDLK_ESCAPE:
 					return -1;
 					break;
+				}
+				break;
+			case SDL_JOYBUTTONDOWN:
+				if (event.jbutton.button==11) {
+					return -1;
 				}
 				break;
 			}
@@ -331,13 +412,23 @@ int main_menu(void) {
 }
 
 int main(int argc,char *argv[]) {
-	BOARD *board=create_board(INLINE,9,7,MAXGEMCOL-1);
-	int bstate=0;
-	SDL_Event event;
-	int gameRunning = 1;
-	int i,ox=0,oy=0;
-	int omx,omy;
 	int rc,gt;
+
+#ifdef __SWITCH__
+	//socketInitializeDefault();
+	//nxlinkStdio();
+	romfsInit();
+#endif
+	rc=SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_JOYSTICK);
+	if(rc!=0) {
+		printf("Error while SDL_Init\n");
+		exit(1);
+	}
+
+	if (SDL_NumJoysticks() > 0) {
+		joy = SDL_JoystickOpen(0);
+	}
+	create_board(INLINE,9,7,MAXGEMCOL-1);
 	init_rand(time(NULL));
 	init_screen();
 	load_assets();
@@ -366,7 +457,17 @@ int main(int argc,char *argv[]) {
 	}
 	savehiscore("sc.dat");
 
-	Mix_CloseAudio();
+    if (SDL_JoystickGetAttached(joy)) {
+        SDL_JoystickClose(joy);
+    }
+
+	deinit_sound();
 	SDL_Quit();
+
+#ifdef __SWITCH__
+	romfsExit();
+	//socketExit();
+#endif
+
 	return 0;
 }

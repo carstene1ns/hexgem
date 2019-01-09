@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "SDL.h"
+#include <SDL.h>
 #include "board.h"
 #include "screen.h"
 #include "random.h"
@@ -33,7 +33,7 @@ GEMLIST *glist_append(GEMLIST *gl,GEM *g) {
 		return glt;
 	}
 	for (l=gl;l->next!=NULL;l=l->next);
-		l->next=glt;
+	l->next=glt;
 	return gl;
 }
 GEMLIST *glist_prepend(GEMLIST *gl,GEM *g) {
@@ -53,7 +53,7 @@ GEMLIST *glist_insert(GEMLIST *gl,GEM *g) {
 		return gl;
 	}
 	for(t=gl;t && g->fall_y<t->g->fall_y;pt=t,t=t->next);
-		if (t) {
+	if (t) {
 		if (pt) { // insersion inside the list
 			tmp->next=t;
 			pt->next=tmp;
@@ -97,6 +97,7 @@ GEMLIST *glist_delgem(GEMLIST *gl,GEM *g) {
 			free(t);
 		}
 	}
+	return l;
 }
 
 void fallbuf_cleanup(BOARD *b,int column,int all) {
@@ -138,7 +139,6 @@ GEM *gem_clone(GEM *g) {
 
 BOARD *create_board(int type,int w,int h,int maxcol) {
 	BOARD *b;
-	int i,j;
 
 	b=malloc(sizeof(BOARD));
 	if (b==NULL) return NULL;
@@ -167,7 +167,7 @@ BOARD *create_board(int type,int w,int h,int maxcol) {
 }
 
 void free_board(BOARD *b) {
-	int i,j;
+	int i;
 	for (i=0;i<b->w;i++) {
 		fallbuf_cleanup(b,i,1);
 	}
@@ -439,10 +439,9 @@ static void redrawboard(BOARD *b) {
 }
 #endif
 int check_board(BOARD *b) {
-	int i,j,jj;
+	int i,j;
 	int rc=0;
 	GEM *g;
-	int fall_y;
 	for (i=0;i<b->w;i++) {
 		for(j=0;j<(i&1?b->h:b->h-1);j++) {
 			if (verify_gem(b,getgem_col(b,i,j),i,j)!=0) {
@@ -469,7 +468,6 @@ int board_col_count(BOARD *b,int col) {
 
 static void inc_timer(BOARD *b,int msec) {
 	int max=(90-(b->level*10))*60;
-	int mul;
 
 	if ((b->game_type&GM_DIFFICULTY)==GM_EASY)
 		msec*=4;
@@ -505,7 +503,6 @@ int reduce_board(BOARD *b) {
 	int i,j,jj,y;
 	int rc=0;
 	GEM *g;
-	int fall_y;
 	int scores_helper[MAXGEMCOL][3];
 	int count;
 

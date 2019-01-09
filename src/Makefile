@@ -1,6 +1,6 @@
-CC=gcc -g -Wall
-CFLAGS=`sdl-config --cflags`
-LDFLAGS=`sdl-config --libs` -lSDL_mixer
+CC=gcc -g -Wall -O2 -Wno-implicit-function-declaration
+CFLAGS=`sdl2-config --cflags`
+LDFLAGS=`sdl2-config --libs` -lSDL2_mixer
 
 CCPND=pandora-gcc -g -Wall
 CFLAGSPND=`pandora-sdl-config --cflags` -DPANDORA -O2

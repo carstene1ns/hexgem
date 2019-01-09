@@ -13,4 +13,4 @@ struct CONF
 	int fullboard;
 } conf;
 
- #endif
+#endif

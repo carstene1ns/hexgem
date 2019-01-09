@@ -17,6 +17,7 @@ typedef enum SOUNDID {
 }SOUNDID;
 
 void init_sound(void);
+void deinit_sound(void);
 void load_sound(void);
 void play_music(SOUNDID id);
 void play_sound(SOUNDID id);
