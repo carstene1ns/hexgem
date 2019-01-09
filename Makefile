@@ -2,12 +2,7 @@
 .SUFFIXES:
 #---------------------------------------------------------------------------------
 
-ifeq ($(strip $(DEVKITPRO)),)
-$(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro")
-endif
-
 TOPDIR ?= $(CURDIR)
-include $(DEVKITPRO)/libnx/switch_rules
 
 #---------------------------------------------------------------------------------
 # TARGET is the name of the output
@@ -35,37 +30,46 @@ BUILD		:=	build
 SOURCES		:=	src
 DATA		:=	data
 INCLUDES	:=	include
-EXEFS_SRC	:=	exefs_src
+EXEFS_SRC	:=	extradata
 ROMFS		:=	assets
 
 APP_TITLE   := HEXGEM
 APP_VERSION := 1.0
-APP_AUTHOR  := pepone42 & carstene1ns
+APP_AUTHOR  := pepone42 & carstene1ns & caghandemir
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE -ftls-model=local-exec
+PREFIX  = arm-vita-eabi
+CC      = $(PREFIX)-gcc
+CXX      = $(PREFIX)-g++
 
-CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
-			$(ARCH) $(DEFINES) -Wno-implicit-function-declaration
-
-CFLAGS	+=	$(INCLUDE) -D__SWITCH__
+CFLAGS	+=	-Wall -O2 -ffunction-sections $(DEFINES) -Wno-implicit-function-declaration -fno-lto
+CFLAGS	+=	$(INCLUDE) -D__vita__
+CFLAGS += -I$(SRCDIR)
+CFLAGS += -I$(VITASDK)/$(PREFIX)/include/SDL2
+CFLAGS += -I$(VITASDK)/$(PREFIX)/include/freetype2
+CFLAGS += -I$(VITASDK)/$(PREFIX)/include/freetype2/freetype
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
-ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+ASFLAGS	:=	-g 
+LDFLAGS	=	-g -Wl,-Map,$(notdir $*.map)
 
-LIBS	:=	-lSDL2_mixer -lSDL2 \
-			-lvorbisidec -logg -lmpg123 -lmodplug -lstdc++ \
-			-lnx -lm
+LIBS	:=		-lSDL2_mixer -lSDL2 \
+			-lvorbisfile -lvorbis -logg -lmpg123 -lmikmod -lstdc++ \
+			-lm -lsndfile \
+			-lSceCtrl_stub -lSceTouch_stub \
+			-lfreetype -lc -lScePower_stub -lSceCommonDialog_stub \
+			-lSceAudio_stub -lSceGxm_stub \
+			-lSceDisplay_stub -lSceSysmodule_stub -lvita2d \
+			-lSceHid_stub -lSceSysmem_stub
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(PORTLIBS) $(LIBNX)
+LIBDIRS	:= $(VITASDK)/$(PREFIX)
 
 
 #---------------------------------------------------------------------------------
@@ -110,36 +114,14 @@ export HFILES_BIN	:=	$(addsuffix .h,$(subst .,_,$(BINFILES)))
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
 			-I$(PORTLIBS)/include/SDL2 \
-			-I$(CURDIR)/$(BUILD)
+			-I$(CURDIR)/$(BUILD) \
+			-I$(VITASDK)/$(PREFIX)/include/SDL2 \
+
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 export BUILD_EXEFS_SRC := $(TOPDIR)/$(EXEFS_SRC)
 
-ifeq ($(strip $(ICON)),)
-	icons := $(wildcard *.jpg)
-	ifneq (,$(findstring $(TARGET).jpg,$(icons)))
-		export APP_ICON := $(TOPDIR)/$(TARGET).jpg
-	else
-		ifneq (,$(findstring icon.jpg,$(icons)))
-			export APP_ICON := $(TOPDIR)/icon.jpg
-		endif
-	endif
-else
-	export APP_ICON := $(TOPDIR)/$(ICON)
-endif
-
-ifeq ($(strip $(NO_ICON)),)
-	export NROFLAGS += --icon=$(APP_ICON)
-endif
-
-ifeq ($(strip $(NO_NACP)),)
-	export NROFLAGS += --nacp=$(CURDIR)/$(TARGET).nacp
-endif
-
-ifneq ($(APP_TITLEID),)
-	export NACPFLAGS += --titleid=$(APP_TITLEID)
-endif
 
 ifneq ($(ROMFS),)
 	export NROFLAGS += --romfsdir=$(CURDIR)/$(ROMFS)
@@ -154,11 +136,6 @@ $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
-#---------------------------------------------------------------------------------
-clean:
-	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).pfs0 $(TARGET).nso $(TARGET).nro $(TARGET).nacp $(TARGET).elf
-
 
 #---------------------------------------------------------------------------------
 else
@@ -169,21 +146,31 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-all	:	$(OUTPUT).pfs0 $(OUTPUT).nro
+all	:	$(OUTPUT).vpk
 
-$(OUTPUT).pfs0	:	$(OUTPUT).nso
+$(OUTPUT).vpk: $(OUTPUT).velf
+	vita-make-fself -s $< build/eboot.bin
+	vita-mksfoex -s TITLE_ID=$(APP_TITLE) "$(OUTPUT)" param.sfo
+	cp -f param.sfo build/sce_sys/param.sfo
+	
+	#------------ Comment this if you don't have 7zip ------------------
+	7z a -tzip ./$(TARGET).vpk -r ./build/sce_sys ./build/eboot.bin
+	#-------------------------------------------------------------------
 
-$(OUTPUT).nso	:	$(OUTPUT).elf
+%.velf: %.elf
+	cp $< $<.unstripped.elf
+	$(PREFIX)-strip -g $<
+	vita-elf-create $< $@
 
-ifeq ($(strip $(NO_NACP)),)
-$(OUTPUT).nro	:	$(OUTPUT).elf $(OUTPUT).nacp
-else
-$(OUTPUT).nro	:	$(OUTPUT).elf
-endif
-
-$(OUTPUT).elf	:	$(OFILES)
+$(OUTPUT).elf: $(OBJS)
+	$(CXX) $(CXXFLAGS) $^ $(LIBS) -o $@
 
 $(OFILES_SRC)	: $(HFILES_BIN)
+
+
+
+clean:
+	@rm -rf $(TARGET).velf $(TARGET).elf $(OBJS)
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data

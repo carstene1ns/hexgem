@@ -20,7 +20,7 @@ static uclock_t F;
 #define MAX_FRAMESKIP 10
 
 char skip_next_frame = 0;
-#if defined(HAVE_GETTIMEOFDAY) && !defined(WII) && !defined(__SWITCH__)
+#if defined(HAVE_GETTIMEOFDAY) && !defined(WII) && !defined(__SWITCH__) && !defined(__vita__)
 static int CPU_FPS = 60;
 static struct timeval init_tv = { 0, 0 };
 #else
@@ -30,7 +30,7 @@ static Uint32 init_tv=0;
 #endif
 uclock_t bench;
 
-#if defined(HAVE_GETTIMEOFDAY) && !defined(WII) && !defined(__SWITCH__)
+#if defined(HAVE_GETTIMEOFDAY) && !defined(WII) && !defined(__SWITCH__) && !defined(__vita__)
 uclock_t get_ticks(void) {
 	struct timeval tv;
 
@@ -52,7 +52,7 @@ Uint32 get_ticks(void)
 #endif
 
 void reset_frame_skip(void) {
-#if defined(HAVE_GETTIMEOFDAY) && !defined(WII) && !defined(__SWITCH__)
+#if defined(HAVE_GETTIMEOFDAY) && !defined(WII) && !defined(__SWITCH__) && !defined(__vita__)
 	init_tv.tv_usec = 0;
 	init_tv.tv_sec = 0;
 #else

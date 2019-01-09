@@ -8,6 +8,10 @@
 #include <switch.h>
 #endif
 
+#ifdef __vita__
+#include <vitasdk.h>
+#endif
+
  /* Stolen from the mailing list */
        /* Creates a new mouse cursor from an XPM */
 
@@ -241,6 +245,9 @@ RETCODE run_game_mainloop(GAMETYPE gametype,int wide) {
 				char *string=getenv("USER");
 				stoupper(string);
 #elif __SWITCH__
+				// TODO
+				char *string="SWITCH PLAYER";
+#elif __vita__
 				// TODO
 				char *string="SWITCH PLAYER";
 #else
