@@ -9,8 +9,8 @@ SDL_Renderer *renderer;
 SDL_Window *window;
 int draw_w, draw_h;
 
-#define SCREEN_WIDTH 960
-#define SCREEN_HEIGHT 544
+#define SCREEN_WIDTH 400
+#define SCREEN_HEIGHT 240
 
 void init_screen(void);
 void load_assets(void);

@@ -3,6 +3,7 @@
 #include "fskip.h"
 #include "hiscore.h"
 #include "sound.h"
+#include <SDL/SDL_config_psp2.h>
 
 #ifdef __SWITCH__
 #include <switch.h>
@@ -10,6 +11,7 @@
 
 #ifdef __vita__
 #include <vitasdk.h>
+#include <psp2/power.h> 
 #endif
 
  /* Stolen from the mailing list */
@@ -189,8 +191,8 @@ RETCODE run_game_mainloop(GAMETYPE gametype,int wide) {
 					num_fingers = SDL_GetNumTouchFingers(touchid);
 
 				if (num_fingers == 1) {
-					finger_x = draw_w * event.tfinger.x;
-					finger_y = draw_h * event.tfinger.y;
+					finger_x = draw_w * event.tfinger.x * 400 / 960;
+					finger_y = draw_h * event.tfinger.y * 240 / 544;
 					omx=omy=-1;
 					screenspace2gemspace(board,finger_x,finger_y,&board->cursx,&board->cursy);
 					if (board->cursx !=-1 && board->cursy!=-1) {
@@ -206,8 +208,8 @@ RETCODE run_game_mainloop(GAMETYPE gametype,int wide) {
 					num_fingers = SDL_GetNumTouchFingers(touchid);
 
 				if (num_fingers == 1 && omx!=-1 && omy!=-1) {
-					finger_x = draw_w * event.tfinger.x;
-					finger_y = draw_h * event.tfinger.y;
+					finger_x = draw_w * event.tfinger.x * 400 / 960;
+					finger_y = draw_h * event.tfinger.y * 240 / 544;
 					screenspace2gemspace(board,finger_x,finger_y,&ox,&oy);
 					if (ox!=board->cursx || oy!=board->cursy) {
 						//printf("Finger Motion %d,%d -> %d %d\n",finger_x,finger_y,ox,oy);
@@ -359,8 +361,8 @@ int main_menu(void) {
 					num_fingers = SDL_GetNumTouchFingers(touchid);
 
 				if (num_fingers == 1) {
-					mx = draw_w * event.tfinger.x;
-					my = draw_h * event.tfinger.y;
+					mx = draw_w * event.tfinger.x * 400 / 960;
+					my = draw_h * event.tfinger.y * 240 / 544;
 					b=1;
 				}
 				break;
@@ -425,6 +427,12 @@ int main(int argc,char *argv[]) {
 	//socketInitializeDefault();
 	//nxlinkStdio();
 	romfsInit();
+#endif
+#ifdef __vita__
+	scePowerSetArmClockFrequency(444);
+	scePowerSetBusClockFrequency(222);
+	scePowerSetGpuClockFrequency(222);
+	scePowerSetGpuXbarClockFrequency(166);
 #endif
 	rc=SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_JOYSTICK);
 	if(rc!=0) {

@@ -223,6 +223,7 @@ void init_screen(void) {
 	buffer=SDL_CreateRGBSurface(SDL_SWSURFACE,SCREEN_WIDTH,SCREEN_HEIGHT,16,0xF800, 0x7E0, 0x1F, 0);
 	screen=SDL_CreateRGBSurface(SDL_SWSURFACE,SCREEN_WIDTH,SCREEN_HEIGHT,32,0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 	texture=SDL_CreateTexture(renderer,SDL_PIXELFORMAT_ABGR8888,SDL_TEXTUREACCESS_STREAMING,SCREEN_WIDTH,SCREEN_HEIGHT);
+
 }
 
 SDL_Surface *load_bmp(char *filename,int colorkey) {

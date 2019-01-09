@@ -6,11 +6,11 @@ INCLUDES	:= .
 
 
 
-LIBS =  -lSDL2_mixer -lSDL2  -lvita2d \
+LIBS =  -lSDL2_mixer -lSDL2 -lvita2d \
 	-lvorbisfile -lvorbis -logg -lmpg123 -lmikmod -lstdc++ \
 	-lm -lSceCtrl_stub -lScePower_stub -lSceCommonDialog_stub  \
-	-lSceGxm_stub -lSceSysmodule_stub -lSceHid_stub -lFLAC -lSceAudio_stub \
-	-lSceDisplay_stub -lSceTouch_stub -lc
+	-lSceGxm_stub -lSceSysmodule_stub -lSceHid_stub -lFLAC \
+	-lSceAudio_stub -lSceDisplay_stub -lSceTouch_stub -lc
 
 
 SRCS := \
@@ -37,7 +37,7 @@ PREFIX  = arm-vita-eabi
 CC      = $(PREFIX)-gcc
 CXX      = $(PREFIX)-g++
 CFLAGS  = $(INCLUDE) -g -Wl,-q -O2 -fsigned-char -w
-CFLAGS	+= $(INCLUDE) -D__vita__
+CFLAGS	+= $(INCLUDE) -D__vita__ -DPSP2
 
 # includes ...
 CFLAGS += -I$(SRCDIR)
