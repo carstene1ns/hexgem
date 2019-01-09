@@ -6,11 +6,12 @@ INCLUDES	:= .
 
 
 
-LIBS =  -lSDL_mixer -lSDL -lvita2d -lfreetype\
-	-lmikmod -lvorbisfile -lvorbis -logg -lsndfile -lScePvf_stub \
-	-lSceAppMgr_stub  -lSceCtrl_stub -lSceTouch_stub -lm -lSceAppUtil_stub -lScePgf_stub -ljpeg \
-	-lc -lScePower_stub -lSceCommonDialog_stub -lpng16 -lz -lSceGxm_stub \
-	-lSceSysmodule_stub -lSceHid_stub -lSceAudio_stub -lSceDisplay_stub -lSceLibKernel_stub
+LIBS =  -lSDL2_mixer -lSDL2  -lvita2d \
+	-lvorbisfile -lvorbis -logg -lmpg123 -lmikmod -lstdc++ \
+	-lm -lSceCtrl_stub -lScePower_stub -lSceCommonDialog_stub  \
+	-lSceGxm_stub -lSceSysmodule_stub -lSceHid_stub -lFLAC -lSceAudio_stub \
+	-lSceDisplay_stub -lSceTouch_stub -lc
+
 
 SRCS := \
 src/board.o \
@@ -35,7 +36,7 @@ export INCLUDE	:= $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
 PREFIX  = arm-vita-eabi
 CC      = $(PREFIX)-gcc
 CXX      = $(PREFIX)-g++
-CFLAGS  = $(INCLUDE) -g -O2 -fsigned-char -w
+CFLAGS  = $(INCLUDE) -g -Wl,-q -O2 -fsigned-char -w
 CFLAGS	+= $(INCLUDE) -D__vita__
 
 # includes ...
@@ -55,10 +56,10 @@ all: $(TARGET).vpk
 $(TARGET).vpk: $(TARGET).velf
 	vita-make-fself -s $< build/eboot.bin
 	vita-mksfoex -s TITLE_ID=$(TITLE) "$(TARGET)" param.sfo
-	cp -f param.sfo build/sce_sys/param.sfo
+	cp -f param.sfo sce_sys/param.sfo
 	
 	#------------ Comment this if you don't have 7zip ------------------
-	7z a -tzip ./$(TARGET).vpk -r ./build/sce_sys ./build/eboot.bin
+	7z a -tzip ./$(TARGET).vpk -r ./sce_sys ./build/eboot.bin
 	#-------------------------------------------------------------------
 
 %.velf: %.elf
@@ -70,5 +71,5 @@ $(TARGET).elf: $(OBJS)
 	$(CXX) $(CXXFLAGS) $^ $(LIBS) -o $@
 
 clean:
-	@rm -rf $(TARGET).velf $(TARGET).elf $(OBJS)
+	@rm -rf $(TARGET).velf $(TARGET).elf $(TARGET).vpk $(TARGET).elf.unstripped.elf $(OBJS)
 

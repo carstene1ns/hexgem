@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <sys/time.h>
+#include <psp2/kernel/processmgr.h>
 #include <math.h>
 #include <SDL.h>
 #include "hexgem.h"
@@ -98,7 +99,7 @@ int frame_skip(void) {
 			while (get_ticks() < target) {
 #ifndef WIN32
 				// if (conf.sleep_idle) {
-				 	usleep(5);
+				 	sceKernelDelayThread(5000);
 				// }
 #endif
 			}
