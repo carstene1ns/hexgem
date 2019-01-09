@@ -3,7 +3,6 @@
 #include "fskip.h"
 #include "hiscore.h"
 #include "sound.h"
-#include <SDL/SDL_config_psp2.h>
 
 #ifdef __SWITCH__
 #include <switch.h>
