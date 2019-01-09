@@ -251,16 +251,16 @@ void load_assets(void) {
 	titlescreen=load_bmp("romfs:/titlescreen.bmp",0);
 	dragonbox=load_bmp("romfs:/dragonbox.bmp",0);
 #elif defined __vita__
-	gem_surface=load_bmp("ux0:/data/hexgem/gems.bmp",1);
-	little_gem_surface=load_bmp("ux0:/data/hexgem/little_gem.bmp",1);
-	board_surface=load_bmp("ux0:/data/hexgem/board169.bmp",0);
-	board_top_surface=load_bmp("ux0:/data/hexgem/board_top.bmp",1);
-	font_big=load_bmp("ux0:/data/hexgem/font_big.bmp",1);
-	font_small=load_bmp("ux0:/data/hexgem/font_small.bmp",1);
-	button=load_bmp("ux0:/data/hexgem/utton.bmp",1);
-	gamemode_button=load_bmp("ux0:/data/hexgem/gamemode.bmp",1);
-	titlescreen=load_bmp("ux0:/data/hexgem/titlescreen.bmp",0);
-	dragonbox=load_bmp("ux0:/data/hexgem/dragonbox.bmp",0);
+	gem_surface=load_bmp("app0:assets/gems.bmp",1);
+	little_gem_surface=load_bmp("app0:assets/little_gem.bmp",1);
+	board_surface=load_bmp("app0:assets/board169.bmp",0);
+	board_top_surface=load_bmp("app0:assets/board_top.bmp",1);
+	font_big=load_bmp("app0:assets/font_big.bmp",1);
+	font_small=load_bmp("app0:assets/font_small.bmp",1);
+	button=load_bmp("app0:assets/button.bmp",1);
+	gamemode_button=load_bmp("app0:assets/gamemode.bmp",1);
+	titlescreen=load_bmp("app0:assets/titlescreen.bmp",0);
+	dragonbox=load_bmp("app0:assets/hexgem/dragonbox.bmp",0);
 #else
 	gem_surface=load_bmp("assets/gems.bmp",1);
 	little_gem_surface=load_bmp("assets/little_gem.bmp",1);
