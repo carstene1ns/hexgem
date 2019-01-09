@@ -442,7 +442,7 @@ int main(int argc,char *argv[]) {
 	init_sound();
 	load_sound();
 	inithiscore();
-	loadhiscore("sc.dat");
+	loadhiscore("ux0:data/sc.dat");
 
 	mouse_curs=NULL;
 #ifndef PANDORA
@@ -462,7 +462,7 @@ int main(int argc,char *argv[]) {
 		}
 		play_music(SID_MUSIC2);
 	}
-	savehiscore("sc.dat");
+	savehiscore("ux0:data/sc.dat");
 
     if (SDL_JoystickGetAttached(joy)) {
         SDL_JoystickClose(joy);
