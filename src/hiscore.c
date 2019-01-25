@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "board.h"
 #include "hiscore.h"
 
@@ -9,12 +10,12 @@ void inithiscore(void) {
 }
 void loadhiscore(char *file) {
 	char name[32];
-	int score,gt,rc;
+	int score,gt;
 	FILE *f=fopen(file,"r");
 	if (f==NULL) return;
 	do {
 		if (fscanf(f,"%d %s %d",&gt,name,&score)==3) {
-			printf("Add %d %s %d\n",gt,name,score);
+			//printf("Add %d %s %d\n",gt,name,score);
 			addhiscore(gt,name,score);
 		}
 	} while(feof(f)==0);
@@ -42,7 +43,7 @@ void addhiscore(int gametype,char *name,int score) {
 			}
 			highscore[gametype][i].score=score;
 			sprintf(highscore[gametype][i].name,"%s",name);
-			printf("Add score %d %s %d\n",gametype,highscore[gametype][i].name,highscore[gametype][i].score);
+			//printf("Add score %d %s %d\n",gametype,highscore[gametype][i].name,highscore[gametype][i].score);
 			break;
 		}
 	}
